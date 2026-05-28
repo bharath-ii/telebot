@@ -5,15 +5,20 @@ Then: python bot.py
 """
 
 import logging
+import os
 import sqlite3
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+# Load local .env file if present
+load_dotenv()
 
 # =============================================
 # CONFIG — Replace these with your values!
 # =============================================
-BOT_TOKEN = "8222112664:AAF66DPzVakaMYvJNT_D3rmi3OiqBy4krVs"          # Get from @BotFather
-GAME_URL = "http://localhost:8000/static/index.html"                 # Expose with ngrok/HTTPS in production
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")             # Set in .env or cloud hosting dashboard
+GAME_URL = os.getenv("GAME_URL", "http://localhost:8000/static/index.html")  # Set in .env or cloud hosting dashboard
 # =============================================
 
 logging.basicConfig(

@@ -12,17 +12,21 @@ import hashlib
 import hmac
 import json
 import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
+# Load local .env file if present
+load_dotenv()
+
 # =============================================
 # CONFIG
 # =============================================
-BOT_TOKEN = "8222112664:AAF66DPzVakaMYvJNT_D3rmi3OiqBy4krVs"   # Same as in bot.py
-DB_FILE = "game.db"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")   # Set in .env or cloud hosting dashboard
+DB_FILE = os.getenv("DB_FILE", "game.db")
 # =============================================
 
 app = FastAPI(title="HamsterTap API")
