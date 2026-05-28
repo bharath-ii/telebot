@@ -18,7 +18,7 @@ load_dotenv()
 # CONFIG — Replace these with your values!
 # =============================================
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")             # Set in .env or cloud hosting dashboard
-GAME_URL = os.getenv("GAME_URL", "http://localhost:8000/static/index.html")  # Set in .env or cloud hosting dashboard
+GAME_URL = os.getenv("GAME_URL", "https://telebot-j062.onrender.com/static/index.html")  # Set in .env or cloud hosting dashboard
 # =============================================
 
 logging.basicConfig(
