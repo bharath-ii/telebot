@@ -435,6 +435,11 @@
   const tgUser = tg?.initDataUnsafe?.user;
   document.getElementById('username').textContent = tgUser?.first_name || 'Player';
 
+  // Base API URL for Cross-Domain hosting (Netlify -> Render)
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? ''
+    : 'https://telebot-j062.onrender.com';
+
   // Game state
   let state = {
     coins: 0,
@@ -496,7 +501,7 @@
     list.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Loading ranking data...</div>';
     
     try {
-      const res = await fetch('/api/leaderboard?limit=10');
+      const res = await fetch(API_BASE + '/api/leaderboard?limit=10');
       if (res.ok) {
         const data = await res.json();
         const players = data.leaderboard || [];
@@ -526,7 +531,7 @@
         });
         
         if (!isMeInList && myId !== 'guest') {
-          const rankRes = await fetch(`/api/rank/${myId}`);
+          const rankRes = await fetch(API_BASE + `/api/rank/${myId}`);
           if (rankRes.ok) {
             const rankData = await rankRes.json();
             const divider = document.createElement('div');
@@ -627,7 +632,7 @@
     const upgradesList = UPGRADES.filter(u => u.bought).map(u => u.id).join(',');
 
     try {
-      await fetch('/api/score', {
+      await fetch(API_BASE + '/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -648,7 +653,7 @@
   async function loadUserProgress() {
     const userId = tgUser?.id || 'guest';
     try {
-      const res = await fetch(`/api/score/${userId}`);
+      const res = await fetch(API_BASE + `/api/score/${userId}`);
       if (res.ok) {
         const data = await res.json();
         state.coins = data.score || 0;
