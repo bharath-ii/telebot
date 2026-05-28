@@ -67,9 +67,48 @@ async def keep_awake():
                 print(f"⚠️ Keep-awake: Ping failed: {e}")
             await asyncio.sleep(600)  # Sleep for 10 minutes (600 seconds)
 
+async def start_bot():
+    """Run the Telegram bot asynchronously inside the same FastAPI process (Free on Render!)"""
+    import bot
+    from telegram import Update
+    from telegram.ext import Application, CommandHandler
+
+    if not bot.BOT_TOKEN or bot.BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+        print("⚠️ Bot startup skipped: BOT_TOKEN is not configured in environment variables.")
+        return
+
+    try:
+        print("🐹 Starting Telegram Bot inside FastAPI backend thread...")
+        application = Application.builder().token(bot.BOT_TOKEN).build()
+
+        application.add_handler(CommandHandler("start", bot.start))
+        application.add_handler(CommandHandler("help", bot.help_command))
+        application.add_handler(CommandHandler("score", bot.score_command))
+        application.add_handler(CommandHandler("top", bot.top_command))
+        application.add_handler(CommandHandler("share", bot.share_command))
+
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+        print("🚀 Telegram Bot successfully started! Running concurrently with FastAPI.")
+        app.state.bot_app = application
+    except Exception as e:
+        print(f"⚠️ Failed to start Telegram Bot: {e}")
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(keep_awake())
+    asyncio.create_task(start_bot())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    bot_app = getattr(app.state, "bot_app", None)
+    if bot_app:
+        print("🛑 Stopping Telegram Bot...")
+        await bot_app.updater.stop()
+        await bot_app.stop()
+        await bot_app.shutdown()
+        print("🏁 Telegram Bot stopped successfully.")
 
 # Serve the game files (index.html)
 app.mount("/static", StaticFiles(directory="."), name="static")
