@@ -149,10 +149,12 @@ class ScoreUpdate(BaseModel):
     init_data: Optional[str] = ""
 
 
+from fastapi.responses import FileResponse
+
 # ========== ROUTES ==========
 @app.get("/")
 def root():
-    return {"status": "HamsterTap API running 🐹"}
+    return FileResponse("index.html")
 
 
 @app.post("/api/score")
