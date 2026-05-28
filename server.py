@@ -12,6 +12,9 @@ import hashlib
 import hmac
 import json
 import os
+import asyncio
+import httpx
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -37,6 +40,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def keep_awake():
+    """Periodically ping the public URL to prevent Render/Railway cold starts"""
+    await asyncio.sleep(60)  # Wait 1 minute for server to boot completely
+    
+    public_url = os.getenv("PUBLIC_URL")
+    if not public_url:
+        game_url = os.getenv("GAME_URL", "")
+        if "http" in game_url:
+            parsed = urlparse(game_url)
+            public_url = f"{parsed.scheme}://{parsed.netloc}"
+            
+    if not public_url:
+        print("ℹ️ Keep-awake: No public URL configured. Skipping pinger.")
+        return
+        
+    print(f"🚀 Keep-awake: Started. Pinging {public_url} every 10 minutes.")
+    
+    async with httpx.AsyncClient() as client:
+        while True:
+            try:
+                response = await client.get(public_url, timeout=15.0)
+                print(f"💤 Keep-awake: Ping sent to {public_url}. Response: {response.status_code}")
+            except Exception as e:
+                print(f"⚠️ Keep-awake: Ping failed: {e}")
+            await asyncio.sleep(600)  # Sleep for 10 minutes (600 seconds)
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(keep_awake())
 
 # Serve the game files (index.html)
 app.mount("/static", StaticFiles(directory="."), name="static")
