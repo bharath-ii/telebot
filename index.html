@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HamsterTap</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --gold: #FFD700;
+    --gold-dark: #E6A800;
+    --orange: #FF6B35;
+    --green: #2ECC71;
+    --bg: #1a0a2e;
+    --card: #2d1b4e;
+    --card2: #3d2660;
+    --text: #fff;
+    --muted: rgba(255,255,255,0.6);
+    --energy-color: #2ECC71;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image: radial-gradient(ellipse at 20% 20%, #3d1a6e 0%, transparent 50%),
+                      radial-gradient(ellipse at 80% 80%, #1a0a4e 0%, transparent 50%);
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px 8px;
+  }
+  .username {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .level-pill {
+    background: linear-gradient(135deg, var(--gold), var(--orange));
+    color: #1a0a2e;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 14px;
+    border-radius: 20px;
+  }
+
+  /* COINS */
+  .coins-display {
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+  .coins-amount {
+    font-family: 'Fredoka One', cursive;
+    font-size: 48px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,215,0,0.4);
+    line-height: 1;
+  }
+  .coins-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ENERGY */
+  .energy-wrap {
+    padding: 8px 16px;
+  }
+  .energy-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .energy-track {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .energy-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #2ECC71, #00d4aa);
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+
+  /* TAP BUTTON */
+  .tap-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 0 8px;
+    position: relative;
+  }
+  .tap-outer {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255,215,0,0.08);
+    border: 2px solid rgba(255,215,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.15); }
+    50% { box-shadow: 0 0 0 20px rgba(255,215,0,0); }
+  }
+  .tap-btn {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #ffeaa0, #FFD700 50%, #E6A800);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: transform 0.08s ease;
+    box-shadow: 0 8px 32px rgba(255,215,0,0.3), 0 2px 8px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .tap-btn:active { transform: scale(0.92); }
+  .tap-btn.no-energy { filter: grayscale(0.6); cursor: not-allowed; }
+  .hamster-emoji { font-size: 72px; line-height: 1; pointer-events: none; }
+  .tap-label { font-size: 11px; font-weight: 800; color: #7a4500; pointer-events: none; letter-spacing: 1px; }
+  .float-coin {
+    position: fixed;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gold);
+    pointer-events: none;
+    animation: floatUp 0.9s ease-out forwards;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-100px) scale(0.7); }
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin: 8px 16px 0;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--card2);
+    color: var(--gold);
+  }
+
+  /* PANELS */
+  .panel { display: none; padding: 12px 16px 80px; }
+  .panel.active { display: block; }
+
+  /* UPGRADES */
+  .upgrades-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .upgrade-card {
+    background: var(--card);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upgrade-card:hover { border-color: rgba(255,215,0,0.3); }
+  .upgrade-card.bought {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+  }
+  .upgrade-card.bought::after {
+    content: '✓';
+    position: absolute;
+    top: 8px; right: 10px;
+    color: var(--green);
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .upgrade-icon { font-size: 28px; margin-bottom: 6px; }
+  .upgrade-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .upgrade-desc { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .upgrade-cost { font-size: 12px; font-weight: 800; color: var(--gold); }
+
+  /* AD BANNER */
+  .ad-banner {
+    background: linear-gradient(135deg, #1a3a6e, #0d2347);
+    border: 1px solid rgba(100,160,255,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ad-icon { font-size: 28px; }
+  .ad-text { flex: 1; font-size: 12px; color: rgba(180,220,255,0.9); line-height: 1.4; }
+  .ad-text strong { color: #fff; font-size: 13px; }
+  .ad-watch-btn {
+    background: #378ADD;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  /* LEADERBOARD */
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--card);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .lb-row.you { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.07); }
+  .lb-rank { font-size: 16px; font-weight: 800; min-width: 28px; color: var(--muted); }
+  .lb-rank.top1 { color: #FFD700; }
+  .lb-rank.top2 { color: #C0C0C0; }
+  .lb-rank.top3 { color: #CD7F32; }
+  .lb-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; background: var(--card2);
+  }
+  .lb-name { flex: 1; font-size: 14px; font-weight: 700; }
+  .lb-score { font-size: 13px; font-weight: 700; color: var(--gold); }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-val { font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--gold); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  /* CUSTOM SLEEK DIALOG MODAL */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10, 5, 20, 0.85);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-box {
+    background: linear-gradient(145deg, var(--card), var(--card2));
+    border: 2px solid rgba(255, 215, 0, 0.25);
+    border-radius: 20px;
+    width: 85%;
+    max-width: 320px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,215,0,0.1);
+    transform: scale(0.85);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .modal-overlay.active .modal-box {
+    transform: scale(1);
+  }
+  .modal-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 20px;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .modal-message {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .modal-btn {
+    background: linear-gradient(135deg, var(--gold), var(--orange));
+    color: #1a0a2e;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    transition: transform 0.1s;
+  }
+  .modal-btn:active {
+    transform: scale(0.95);
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="username" id="username">Player</span>
+  <span class="level-pill" id="level-pill">Level 1</span>
+</div>
+
+<div class="coins-display">
+  <div class="coins-amount" id="coins-display">0</div>
+  <div class="coins-label">🪙 Total Coins</div>
+</div>
+
+<div class="energy-wrap">
+  <div class="energy-top">
+    <span>⚡ Energy</span>
+    <span id="energy-text">100/100</span>
+  </div>
+  <div class="energy-track">
+    <div class="energy-bar" id="energy-bar" style="width:100%"></div>
+  </div>
+</div>
+
+<div class="tap-section">
+  <div class="tap-outer">
+    <button class="tap-btn" id="tap-btn" aria-label="Tap to earn coins">
+      <span class="hamster-emoji">🐹</span>
+      <span class="tap-label">TAP!</span>
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="upgrades">🛒 Upgrades</div>
+  <div class="tab" data-panel="leaderboard">🏆 Leaderboard</div>
+  <div class="tab" data-panel="stats">📊 Stats</div>
+</div>
+
+<div id="panel-upgrades" class="panel active">
+  <div class="upgrades-grid" id="upgrades-grid"></div>
+  <div class="ad-banner">
+    <span class="ad-icon">📺</span>
+    <div class="ad-text"><strong>Out of energy?</strong><br>Watch a short ad to refill instantly!</div>
+    <button class="ad-watch-btn" id="ad-btn">Watch</button>
+  </div>
+</div>
+
+<div id="panel-leaderboard" class="panel">
+  <div class="section-title">Top Players</div>
+  <div id="lb-list"></div>
+</div>
+
+<div id="panel-stats" class="panel">
+  <div class="section-title">Your Stats</div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="stat-taps">0</div><div class="stat-label">Total Taps</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-cpt">1</div><div class="stat-label">Coins / Tap</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-ups">0</div><div class="stat-label">Upgrades Bought</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-level">1</div><div class="stat-label">Level</div></div>
+  </div>
+</div>
+
+<!-- Modal Markup -->
+<div class="modal-overlay" id="custom-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Success!</div>
+    <div class="modal-message" id="modal-message">Your energy has been refilled.</div>
+    <button class="modal-btn" onclick="closeModal()">Awesome!</button>
+  </div>
+</div>
+
+<script>
+  // Telegram WebApp init
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  const tgUser = tg?.initDataUnsafe?.user;
+  document.getElementById('username').textContent = tgUser?.first_name || 'Player';
+
+  // Game state
+  let state = {
+    coins: 0,
+    energy: 100,
+    maxEnergy: 100,
+    coinsPerTap: 1,
+    level: 1,
+    totalTaps: 0,
+    upgradesBought: 0,
+  };
+
+  let tapsSinceLastSave = 0;
+
+  const UPGRADES = [
+    { id:'u1', icon:'⚡', name:'Double Tap',   desc:'+1 coin per tap',    cost:50,  bought:false, apply:()=>{ state.coinsPerTap+=1; } },
+    { id:'u2', icon:'🔋', name:'Big Battery',  desc:'+50 max energy',     cost:100, bought:false, apply:()=>{ state.maxEnergy+=50; state.energy=Math.min(state.energy+50, state.maxEnergy); } },
+    { id:'u3', icon:'💥', name:'Power Tap',    desc:'+3 coins per tap',   cost:300, bought:false, apply:()=>{ state.coinsPerTap+=3; } },
+    { id:'u4', icon:'🚀', name:'Turbo Tap',    desc:'+5 coins per tap',   cost:800, bought:false, apply:()=>{ state.coinsPerTap+=5; } },
+    { id:'u5', icon:'🌀', name:'Auto Refill',  desc:'Energy refills 2x faster', cost:500, bought:false, apply:()=>{ clearInterval(refillInterval); refillInterval=setInterval(refill,500); } },
+    { id:'u6', icon:'💰', name:'Gold Rush',    desc:'+10 coins per tap',  cost:2000,bought:false, apply:()=>{ state.coinsPerTap+=10; } },
+  ];
+
+  // Render upgrades
+  function renderUpgrades() {
+    const grid = document.getElementById('upgrades-grid');
+    grid.innerHTML = '';
+    UPGRADES.forEach(u => {
+      const el = document.createElement('div');
+      el.className = 'upgrade-card' + (u.bought ? ' bought' : '');
+      el.innerHTML = `
+        <div class="upgrade-icon">${u.icon}</div>
+        <div class="upgrade-name">${u.name}</div>
+        <div class="upgrade-desc">${u.desc}</div>
+        <div class="upgrade-cost">${u.bought ? 'Owned' : '🪙 ' + u.cost.toLocaleString()}</div>
+      `;
+      if (!u.bought) {
+        el.addEventListener('click', () => {
+          if (state.coins >= u.cost) {
+            state.coins -= u.cost;
+            u.bought = true;
+            u.apply();
+            state.upgradesBought++;
+            renderUpgrades();
+            updateUI();
+            saveScore(); // Save immediately on purchase
+            showModal('Upgrade Acquired! 🎉', `You successfully unlocked ${u.name}!`);
+          } else {
+            showModal('Not Enough Coins! 🪙', `You need ${(u.cost - state.coins).toLocaleString()} more coins to purchase ${u.name}.`);
+          }
+        });
+      }
+      grid.appendChild(el);
+    });
+  }
+
+  // Render leaderboard dynamically from backend
+  async function renderLeaderboard() {
+    const list = document.getElementById('lb-list');
+    list.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--muted);">Loading ranking data...</div>';
+    
+    try {
+      const res = await fetch('/api/leaderboard?limit=10');
+      if (res.ok) {
+        const data = await res.json();
+        const players = data.leaderboard || [];
+        
+        const myId = String(tgUser?.id || 'guest');
+        let isMeInList = players.some(p => String(p.user_id) === myId);
+        
+        list.innerHTML = '';
+        const medals = ["🥇", "🥈", "🥉"];
+        const defaultEmojis = ["🐯", "🦊", "🐸", "🐱", "🐼", "🐨", "🐰", "🦁", "🐙", "🐹"];
+        
+        players.forEach((p, i) => {
+          const isYou = String(p.user_id) === myId;
+          const row = document.createElement('div');
+          row.className = 'lb-row' + (isYou ? ' you' : '');
+          const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+          const rankLabel = i < 3 ? medals[i] : '#' + (i + 1);
+          const emoji = isYou ? '🐹' : (defaultEmojis[i % defaultEmojis.length]);
+          
+          row.innerHTML = `
+            <div class="lb-rank ${rankClass}">${rankLabel}</div>
+            <div class="lb-avatar">${emoji}</div>
+            <div class="lb-name">${isYou ? '<strong>You</strong>' : p.username}</div>
+            <div class="lb-score">🪙 ${p.score.toLocaleString()}</div>
+          `;
+          list.appendChild(row);
+        });
+        
+        if (!isMeInList && myId !== 'guest') {
+          const rankRes = await fetch(`/api/rank/${myId}`);
+          if (rankRes.ok) {
+            const rankData = await rankRes.json();
+            const divider = document.createElement('div');
+            divider.style.cssText = 'height:1px; background:rgba(255,255,255,0.1); margin:12px 0;';
+            list.appendChild(divider);
+            
+            const myRow = document.createElement('div');
+            myRow.className = 'lb-row you';
+            myRow.innerHTML = `
+              <div class="lb-rank">#${rankData.rank}</div>
+              <div class="lb-avatar">🐹</div>
+              <div class="lb-name"><strong>You</strong></div>
+              <div class="lb-score">🪙 ${state.coins.toLocaleString()}</div>
+            `;
+            list.appendChild(myRow);
+          }
+        }
+      } else {
+        throw new Error("Failed to load rankings");
+      }
+    } catch (e) {
+      list.innerHTML = '<div style="text-align:center; padding: 20px; color: #ff6b6b;">Failed to load leaderboard</div>';
+      console.error("Leaderboard error:", e);
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('coins-display').textContent = state.coins.toLocaleString();
+    const pct = (state.energy / state.maxEnergy) * 100;
+    document.getElementById('energy-bar').style.width = pct + '%';
+    document.getElementById('energy-text').textContent = state.energy + '/' + state.maxEnergy;
+    state.level = Math.floor(state.coins / 500) + 1;
+    document.getElementById('level-pill').textContent = 'Level ' + state.level;
+    document.getElementById('stat-taps').textContent = state.totalTaps.toLocaleString();
+    document.getElementById('stat-cpt').textContent = state.coinsPerTap;
+    document.getElementById('stat-ups').textContent = state.upgradesBought;
+    document.getElementById('stat-level').textContent = state.level;
+    const btn = document.getElementById('tap-btn');
+    btn.classList.toggle('no-energy', state.energy <= 0);
+  }
+
+  // Float animation
+  function spawnFloat(x, y) {
+    const el = document.createElement('div');
+    el.className = 'float-coin';
+    el.textContent = '+' + state.coinsPerTap;
+    el.style.left = (x - 20) + 'px';
+    el.style.top = (y - 20) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
+  // Tap handler
+  document.getElementById('tap-btn').addEventListener('click', e => {
+    if (state.energy <= 0) return;
+    state.coins += state.coinsPerTap;
+    state.energy = Math.max(0, state.energy - 1);
+    state.totalTaps++;
+    tapsSinceLastSave++;
+    spawnFloat(e.clientX, e.clientY);
+    updateUI();
+    // Send score to backend every 10 taps
+    if (tapsSinceLastSave % 10 === 0) saveScore();
+  });
+
+  // Energy refill
+  function refill() {
+    if (state.energy < state.maxEnergy) {
+      state.energy = Math.min(state.maxEnergy, state.energy + 1);
+      updateUI();
+    }
+  }
+  let refillInterval = setInterval(refill, 1000);
+
+  // Ad button
+  document.getElementById('ad-btn').addEventListener('click', () => {
+    state.energy = state.maxEnergy;
+    updateUI();
+    saveScore(); // Save immediately when energy is refilled
+    showModal('Refilled! 🔋', 'Thanks for watching! Energy fully refilled!');
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+      if (tab.dataset.panel === 'leaderboard') renderLeaderboard();
+    });
+  });
+
+  // Save score to backend
+  async function saveScore() {
+    const userId = tgUser?.id || 'guest';
+    const username = tgUser?.first_name || 'Player';
+    const upgradesList = UPGRADES.filter(u => u.bought).map(u => u.id).join(',');
+
+    try {
+      await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: String(userId),
+          username: username,
+          score: state.coins,
+          taps: tapsSinceLastSave,
+          level: state.level,
+          upgrades: upgradesList,
+          init_data: tg?.initData || ''
+        })
+      });
+      tapsSinceLastSave = 0; // Reset incremental counter on successful sync
+    } catch(e) { /* offline or dev mode */ }
+  }
+
+  // Load progress from backend
+  async function loadUserProgress() {
+    const userId = tgUser?.id || 'guest';
+    try {
+      const res = await fetch(`/api/score/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        state.coins = data.score || 0;
+        state.totalTaps = data.taps || 0;
+        state.level = data.level || 1;
+        
+        if (data.upgrades) {
+          const boughtIds = data.upgrades.split(',');
+          boughtIds.forEach(id => {
+            const u = UPGRADES.find(item => item.id === id);
+            if (u) {
+              u.bought = true;
+              u.apply();
+              state.upgradesBought++;
+            }
+          });
+        }
+        updateUI();
+        renderUpgrades();
+      }
+    } catch (e) {
+      console.error("Failed to load progress:", e);
+    }
+  }
+
+  // Modal handlers
+  function showModal(title, msg) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = msg;
+    document.getElementById('custom-modal').classList.add('active');
+  }
+  function closeModal() {
+    document.getElementById('custom-modal').classList.remove('active');
+  }
+
+  // Initialize
+  loadUserProgress().then(() => {
+    renderUpgrades();
+    updateUI();
+  });
+</script>
+</body>
+</html>
